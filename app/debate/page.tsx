@@ -84,7 +84,7 @@ export default function DebatePage() {
       setSkipCurrent(false);
     } else {
       addXp(100);
-      router.push("/route-selection");
+      router.push("/role-selection");
     }
   }, [currentLineIndex, dialogues.length, addXp, router]);
 
@@ -168,7 +168,7 @@ export default function DebatePage() {
               Nouveau débat
             </Button>
             <Button onClick={() => router.push("/freedom-guide")} size="xl" variant="outline">
-              Continuer l'Aventure <ArrowRight className="ml-2 w-5 h-5" />
+              Continuer l&apos;Aventure <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
         </motion.div>
@@ -183,7 +183,7 @@ export default function DebatePage() {
     return (
       <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
         <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-        <p className="text-xl text-muted-foreground">Génération du débat avec l'IA...</p>
+        <p className="text-xl text-muted-foreground">Génération du débat avec l&apos;IA...</p>
       </div>
     );
   }
