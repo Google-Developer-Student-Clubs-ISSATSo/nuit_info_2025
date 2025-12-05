@@ -4,15 +4,13 @@ import { Avatar, DialogueBox } from "@/components/avatar/Avatar";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/useAppStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, Loader2 } from "lucide-react";
+import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, Loader2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import dialoguesData from "@/data/avatar-dialogues.json";
 import { generateDebate } from "@/app/actions/generate-debate";
 
 export default function DebatePage() {
-  const [dialogues, setDialogues] = useState<DialogueLine[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -31,6 +29,38 @@ export default function DebatePage() {
   // const dialogues = dialoguesData.debate;
   const currentLine = dialogues[currentLineIndex];
   const isFinished = !isLoading && currentLineIndex >= dialogues.length;
+
+  // Fetch dialogue from Gemini API
+  const fetchDebate = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setCurrentLineIndex(0);
+    setIsTypingComplete(false);
+    setSkipCurrent(false);
+
+    try {
+      const response = await fetch("/api/generate-debate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: null }),
+      });
+
+      if (!response.ok) throw new Error("Failed to generate debate");
+
+      const data = await response.json();
+      setDialogues(data.debate);
+    } catch (err) {
+      setError("Impossible de générer le débat. Réessayez !");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    fetchDebate();
+  }, [fetchDebate]);
 
   useEffect(() => {
     const fetchDialogues = async () => {
@@ -106,7 +136,6 @@ export default function DebatePage() {
 
     const startTimeout = setTimeout(speak, 100);
     return () => clearTimeout(startTimeout);
-  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
   }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
 
   const handleSkip = () => {

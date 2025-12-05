@@ -4,21 +4,21 @@ import { GoogleGenAI } from "@google/genai";
 
 const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY });
 
-const topics = [
-  "Cost savings vs Initial investment and training costs",
-  "Data Privacy, GDPR compliance, and data sovereignty",
-  "Vendor lock-in vs Freedom and ownership of technology",
-  "Security through obscurity vs Open source transparency and auditability",
-  "Customization, flexibility, and adapting software to specific needs",
-  "Community support vs Dedicated paid enterprise support",
-  "Long-term sustainability, planned obsolescence, and hardware longevity",
-  "Interoperability, open standards, and file format compatibility",
-  "The philosophy of sharing knowledge vs protecting intellectual property",
-  "Reliability and uptime of mature open source solutions vs proprietary SLAs"
-];
-
 export async function generateDebate() {
   try {
+    const topics = [
+      "Cost savings and licensing fees",
+      "Data privacy and GDPR compliance",
+      "Security vulnerabilities and patching",
+      "Vendor lock-in and long-term sustainability",
+      "Customization and flexibility of software",
+      "Community support vs paid support",
+      "Interoperability and open standards",
+      "Planned obsolescence of hardware",
+      "Transparency and auditability of code",
+      "Digital sovereignty for the organization"
+    ];
+
     const randomTopic = topics[Math.floor(Math.random() * topics.length)];
 
     const prompt = `
@@ -28,9 +28,9 @@ export async function generateDebate() {
 
     The debate should be about switching from proprietary software to open source in a company or school.
     
-    IMPORTANT: Focus the debate specifically on the topic of: "${randomTopic}".
+    IMPORTANT: Focus the debate specifically on this topic: "${randomTopic}".
     
-    Alex raises concerns related to this topic, and Sophie answers them with benefits of open source regarding this specific topic.
+    Alex raises concerns related to this topic, and Sophie answers them with benefits of open source regarding this topic.
     
     Return ONLY valid JSON in the following format:
     {
@@ -52,7 +52,7 @@ export async function generateDebate() {
     `;
 
     const result = await genAI.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: "gemini-2.5-flash",
       contents: [
         {
           role: "user",
