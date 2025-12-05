@@ -11,9 +11,12 @@ import dialoguesData from "@/data/avatar-dialogues.json";
 import { generateDebate } from "@/app/actions/generate-debate";
 
 export default function DebatePage() {
+  const [dialogues, setDialogues] = useState<DialogueLine[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true); // Auto-play by default
+  const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [skipCurrent, setSkipCurrent] = useState(false);
   
@@ -73,6 +76,7 @@ export default function DebatePage() {
   // Handle TTS
   useEffect(() => {
     if (isLoading || isFinished || isMuted || !currentLine) return;
+    if (isLoading || isFinished || isMuted || !currentLine) return;
 
     window.speechSynthesis.cancel();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -80,7 +84,7 @@ export default function DebatePage() {
     const speak = () => {
       const utterance = new SpeechSynthesisUtterance(currentLine.text);
       utterance.lang = "fr-FR";
-      utterance.rate = 1.1; // Slightly faster
+      utterance.rate = 1.1;
       utterance.pitch = currentLine.speaker === "freedom" ? 1.15 : 0.85;
 
       const voices = window.speechSynthesis.getVoices();
@@ -100,19 +104,17 @@ export default function DebatePage() {
       window.speechSynthesis.speak(utterance);
     };
 
-    // Small delay to let animation start
     const startTimeout = setTimeout(speak, 100);
     return () => clearTimeout(startTimeout);
   }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
+  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
 
-  // Skip current dialogue text (instant complete)
   const handleSkip = () => {
     window.speechSynthesis.cancel();
     setSkipCurrent(true);
     setIsTypingComplete(true);
   };
 
-  // Skip to next dialogue
   const handleNext = () => {
     window.speechSynthesis.cancel();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -153,13 +155,21 @@ export default function DebatePage() {
         >
           <h1 className="text-4xl font-bold">Débat Terminé ! 🎉</h1>
           <p className="text-xl text-muted-foreground">Alex est convaincu. Et toi ?</p>
-          <Button onClick={() => router.push("/freedom-guide")} size="xl" variant="gradient">
-            Continuer l'Aventure <ArrowRight className="ml-2 w-5 h-5" />
-          </Button>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={fetchDebate} size="lg" variant="outline" className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Nouveau débat
+            </Button>
+            <Button onClick={() => router.push("/role-selection")} size="xl" variant="gradient">
+              Continuer <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </div>
         </motion.div>
       </div>
     );
   }
+
+  if (!currentLine) return null;
 
   return (
     <div className="container mx-auto px-4 py-6 min-h-[calc(100vh-4rem)] flex flex-col max-w-4xl">
@@ -168,10 +178,13 @@ export default function DebatePage() {
         <div>
           <h1 className="text-2xl font-bold">Le Grand Débat</h1>
           <p className="text-sm text-muted-foreground">
-            {currentLineIndex + 1} / {dialogues.length}
+            {currentLineIndex + 1} / {dialogues.length} • Généré par IA ✨
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={fetchDebate} title="Nouveau débat">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
           <Button variant="outline" size="icon" onClick={toggleMute} title={isMuted ? "Activer le son" : "Couper le son"}>
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </Button>
