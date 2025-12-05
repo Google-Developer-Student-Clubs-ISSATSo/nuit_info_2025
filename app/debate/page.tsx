@@ -4,15 +4,23 @@ import { Avatar, DialogueBox } from "@/components/avatar/Avatar";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/useAppStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward } from "lucide-react";
+import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, RefreshCw, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
-import dialoguesData from "@/data/avatar-dialogues.json";
+
+interface DialogueLine {
+  speaker: "traditional" | "freedom";
+  text: string;
+  emoji: string;
+}
 
 export default function DebatePage() {
+  const [dialogues, setDialogues] = useState<DialogueLine[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true); // Auto-play by default
+  const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [skipCurrent, setSkipCurrent] = useState(false);
   const router = useRouter();
@@ -21,9 +29,40 @@ export default function DebatePage() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const dialogues = dialoguesData.debate;
   const currentLine = dialogues[currentLineIndex];
-  const isFinished = currentLineIndex >= dialogues.length;
+  const isFinished = dialogues.length > 0 && currentLineIndex >= dialogues.length;
+
+  // Fetch dialogue from Gemini API
+  const fetchDebate = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    setCurrentLineIndex(0);
+    setIsTypingComplete(false);
+    setSkipCurrent(false);
+
+    try {
+      const response = await fetch("/api/generate-debate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: null }),
+      });
+
+      if (!response.ok) throw new Error("Failed to generate debate");
+
+      const data = await response.json();
+      setDialogues(data.debate);
+    } catch (err) {
+      setError("Impossible de générer le débat. Réessayez !");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    fetchDebate();
+  }, [fetchDebate]);
 
   // Auto-scroll to bottom when new message appears
   useEffect(() => {
@@ -54,7 +93,7 @@ export default function DebatePage() {
 
   // Handle TTS
   useEffect(() => {
-    if (isFinished || isMuted) return;
+    if (isLoading || isFinished || isMuted || !currentLine) return;
 
     window.speechSynthesis.cancel();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -62,7 +101,7 @@ export default function DebatePage() {
     const speak = () => {
       const utterance = new SpeechSynthesisUtterance(currentLine.text);
       utterance.lang = "fr-FR";
-      utterance.rate = 1.1; // Slightly faster
+      utterance.rate = 1.1;
       utterance.pitch = currentLine.speaker === "freedom" ? 1.15 : 0.85;
 
       const voices = window.speechSynthesis.getVoices();
@@ -82,19 +121,16 @@ export default function DebatePage() {
       window.speechSynthesis.speak(utterance);
     };
 
-    // Small delay to let animation start
     const startTimeout = setTimeout(speak, 100);
     return () => clearTimeout(startTimeout);
-  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext]);
+  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
 
-  // Skip current dialogue text (instant complete)
   const handleSkip = () => {
     window.speechSynthesis.cancel();
     setSkipCurrent(true);
     setIsTypingComplete(true);
   };
 
-  // Skip to next dialogue
   const handleNext = () => {
     window.speechSynthesis.cancel();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -116,6 +152,48 @@ export default function DebatePage() {
     setIsMuted(!isMuted);
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center space-y-6"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <Loader2 className="w-12 h-12 text-primary mx-auto" />
+          </motion.div>
+          <h2 className="text-2xl font-bold">Génération du débat avec l'IA...</h2>
+          <p className="text-muted-foreground">Sophie et Alex préparent leurs arguments 🤖✨</p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center space-y-6"
+        >
+          <h2 className="text-2xl font-bold text-destructive">Oups ! 😅</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={fetchDebate} size="lg" className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            Réessayer
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (isFinished) {
     return (
       <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
@@ -130,6 +208,10 @@ export default function DebatePage() {
             <Button onClick={() => router.push("/route-selection")} size="xl" variant="gradient">
               Choisir Votre Route <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
+            <Button onClick={fetchDebate} size="lg" variant="outline" className="gap-2">
+              <RefreshCw className="w-4 h-4" />
+              Nouveau débat
+            </Button>
             <Button onClick={() => router.push("/freedom-guide")} size="xl" variant="outline">
               Continuer l'Aventure <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
@@ -141,7 +223,8 @@ export default function DebatePage() {
 
   // Get all previous dialogues and current one
   const previousDialogues = dialogues.slice(0, currentLineIndex);
-  const allDialogues = [...previousDialogues, currentLine];
+  
+  if (!currentLine) return null;
 
   return (
     <div className="container mx-auto px-4 py-6 min-h-[calc(100vh-4rem)] flex flex-col max-w-4xl">
@@ -150,10 +233,13 @@ export default function DebatePage() {
         <div>
           <h1 className="text-2xl font-bold">Le Grand Débat</h1>
           <p className="text-sm text-muted-foreground">
-            {currentLineIndex + 1} / {dialogues.length}
+            {currentLineIndex + 1} / {dialogues.length} • Généré par IA ✨
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={fetchDebate} title="Nouveau débat">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
           <Button variant="outline" size="icon" onClick={toggleMute} title={isMuted ? "Activer le son" : "Couper le son"}>
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </Button>
