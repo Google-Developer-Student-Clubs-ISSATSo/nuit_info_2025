@@ -4,10 +4,11 @@ import { Avatar, DialogueBox } from "@/components/avatar/Avatar";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/useAppStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward } from "lucide-react";
+import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import dialoguesData from "@/data/avatar-dialogues.json";
+import { generateDebate } from "@/app/actions/generate-debate";
 
 export default function DebatePage() {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
@@ -15,14 +16,39 @@ export default function DebatePage() {
   const [isPlaying, setIsPlaying] = useState(true); // Auto-play by default
   const [isMuted, setIsMuted] = useState(false);
   const [skipCurrent, setSkipCurrent] = useState(false);
+  
+  const [dialogues, setDialogues] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const router = useRouter();
   const addXp = useAppStore((state) => state.addXp);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const dialogues = dialoguesData.debate;
+  // const dialogues = dialoguesData.debate;
   const currentLine = dialogues[currentLineIndex];
-  const isFinished = currentLineIndex >= dialogues.length;
+  const isFinished = !isLoading && currentLineIndex >= dialogues.length;
+
+  useEffect(() => {
+    const fetchDialogues = async () => {
+      setIsLoading(true);
+      try {
+        const data = await generateDebate();
+        console.log("Fetched Debate Data:", data);
+        if (data && data.debate) {
+          setDialogues(data.debate);
+        } else {
+          setDialogues(dialoguesData.debate);
+        }
+      } catch (error) {
+        console.error("Failed to fetch debate:", error);
+        setDialogues(dialoguesData.debate);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDialogues();
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -46,7 +72,7 @@ export default function DebatePage() {
 
   // Handle TTS
   useEffect(() => {
-    if (isFinished || isMuted) return;
+    if (isLoading || isFinished || isMuted || !currentLine) return;
 
     window.speechSynthesis.cancel();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -77,7 +103,7 @@ export default function DebatePage() {
     // Small delay to let animation start
     const startTimeout = setTimeout(speak, 100);
     return () => clearTimeout(startTimeout);
-  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext]);
+  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
 
   // Skip current dialogue text (instant complete)
   const handleSkip = () => {
@@ -107,6 +133,15 @@ export default function DebatePage() {
     }
     setIsMuted(!isMuted);
   };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+        <p className="text-xl text-muted-foreground">Génération du débat en cours...</p>
+      </div>
+    );
+  }
 
   if (isFinished) {
     return (
