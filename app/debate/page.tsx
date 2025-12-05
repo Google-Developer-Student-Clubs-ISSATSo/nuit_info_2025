@@ -263,6 +263,7 @@ export default function DebatePage() {
                   emoji={dialogue.emoji}
                   position="left"
                   isSpeaking={false}
+                  isLarge={false}
                   className="flex-shrink-0"
                 />
               )}
@@ -281,6 +282,7 @@ export default function DebatePage() {
                   emoji={dialogue.emoji}
                   position="right"
                   isSpeaking={false}
+                  isLarge={false}
                   className="flex-shrink-0"
                 />
               )}
@@ -288,13 +290,13 @@ export default function DebatePage() {
           );
         })}
 
-        {/* Current Message (Typing) */}
+        {/* Current Message (Typing) - Only Current Speaker */}
         <motion.div
           key={currentLineIndex}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className={`flex gap-3 ${currentLine.speaker === "traditional" ? "justify-start" : "justify-end"}`}
+          className={`flex gap-4 ${currentLine.speaker === "traditional" ? "justify-start" : "justify-end"}`}
         >
           {currentLine.speaker === "traditional" && (
             <Avatar
@@ -303,10 +305,11 @@ export default function DebatePage() {
               emoji={currentLine.emoji}
               position="left"
               isSpeaking={true}
+              isLarge={true}
               className="flex-shrink-0"
             />
           )}
-          <div className={`max-w-[70%] ${currentLine.speaker === "traditional" ? "" : "flex flex-col items-end"}`}>
+          <div className={`w-full max-w-[85%] ${currentLine.speaker === "traditional" ? "" : "flex flex-col items-end"}`}>
             <AnimatePresence mode="wait">
               <DialogueBox
                 key={currentLineIndex}
@@ -315,6 +318,7 @@ export default function DebatePage() {
                 speakerType={currentLine.speaker === "freedom" ? "human" : "robot"}
                 isComplete={skipCurrent}
                 onComplete={() => setIsTypingComplete(true)}
+                isLarge={true}
               />
             </AnimatePresence>
           </div>
@@ -325,6 +329,7 @@ export default function DebatePage() {
               emoji={currentLine.emoji}
               position="right"
               isSpeaking={true}
+              isLarge={true}
               className="flex-shrink-0"
             />
           )}

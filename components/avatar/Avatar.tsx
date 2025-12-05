@@ -7,14 +7,21 @@ import { useEffect, useState } from 'react'
 
 interface AvatarProps {
   type: 'human' | 'robot'
-  position: 'left' | 'right'
+  position: 'left' | 'right' | 'center'
   name?: string
   emoji?: string
   isSpeaking?: boolean
   className?: string
+  isLarge?: boolean
 }
 
-export function Avatar({ type, name, isSpeaking, className }: AvatarProps) {
+export function Avatar({
+  type,
+  name,
+  isSpeaking,
+  className,
+  isLarge = false,
+}: AvatarProps) {
   // Determine which avatar image to use
   const avatarImage =
     type === 'human' ? '/avatars/sophie.png' : '/avatars/alex.png'
@@ -31,40 +38,19 @@ export function Avatar({ type, name, isSpeaking, className }: AvatarProps) {
       {/* Avatar Circle with Image */}
       <div
         className={cn(
-          'bg-background relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-full shadow-lg transition-all duration-300 md:h-24 md:w-24',
-          isSpeaking && 'ring-offset-background shadow-xl ring-4 ring-offset-2',
+          'bg-background relative flex items-center justify-center overflow-hidden rounded-full shadow-lg transition-all duration-300',
+          isLarge ? 'h-40 w-40 md:h-48 md:w-48' : 'h-20 w-20 md:h-24 md:w-24',
         )}
       >
         <Image
           src={avatarImage}
           alt={avatarName}
-          width={96}
-          height={96}
+          width={isLarge ? 192 : 96}
+          height={isLarge ? 192 : 96}
           className="h-full w-full object-cover"
           priority
         />
       </div>
-
-      {/* Speaking Indicator */}
-      {isSpeaking && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex gap-1"
-        >
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.15 }}
-              className={cn(
-                'h-2 w-2 rounded-full',
-                type === 'human' ? 'bg-emerald-500' : 'bg-slate-500',
-              )}
-            />
-          ))}
-        </motion.div>
-      )}
 
       {/* Name Badge */}
       {name && (
@@ -85,10 +71,11 @@ export function Avatar({ type, name, isSpeaking, className }: AvatarProps) {
 
 interface DialogueBoxProps {
   text: string
-  position: 'left' | 'right'
+  position: 'left' | 'right' | 'center'
   speakerType?: 'human' | 'robot'
   isComplete?: boolean
   onComplete?: () => void
+  isLarge?: boolean
 }
 
 export function DialogueBox({
@@ -97,6 +84,7 @@ export function DialogueBox({
   speakerType = 'human',
   isComplete = false,
   onComplete,
+  isLarge = false,
 }: DialogueBoxProps) {
   const [displayedText, setDisplayedText] = useState('')
   const [isTypingDone, setIsTypingDone] = useState(false)
@@ -148,14 +136,24 @@ export function DialogueBox({
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
       className={cn(
-        'relative w-full max-w-md rounded-2xl p-5 shadow-lg backdrop-blur-sm',
+        'relative w-full rounded-2xl shadow-lg backdrop-blur-sm',
+        isLarge ? 'max-w-full p-8 md:p-10 lg:p-12' : 'max-w-md p-5',
         speakerType === 'human'
           ? 'border border-emerald-200/50 bg-gradient-to-br from-emerald-50 to-teal-50 dark:border-emerald-700/50 dark:from-emerald-950/50 dark:to-teal-950/50'
           : 'border border-slate-200/50 bg-gradient-to-br from-slate-50 to-gray-50 dark:border-slate-700/50 dark:from-slate-900/70 dark:to-gray-900/70',
-        position === 'left' ? 'rounded-tl-sm' : 'rounded-tr-sm',
+        position === 'left'
+          ? 'rounded-tl-sm'
+          : position === 'right'
+            ? 'rounded-tr-sm'
+            : 'rounded-tl-sm rounded-tr-sm',
       )}
     >
-      <p className="text-foreground/90 text-sm leading-relaxed break-words whitespace-pre-wrap md:text-base">
+      <p
+        className={cn(
+          'text-foreground/90 leading-relaxed break-words whitespace-pre-wrap',
+          isLarge ? 'text-base md:text-lg lg:text-xl' : 'text-sm md:text-base',
+        )}
+      >
         {displayedText}
         {!isTypingDone && (
           <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse bg-current align-middle" />
