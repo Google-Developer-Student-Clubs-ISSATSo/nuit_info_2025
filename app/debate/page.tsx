@@ -4,22 +4,19 @@ import { Avatar, DialogueBox } from "@/components/avatar/Avatar";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/useAppStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, Loader2, RefreshCw } from "lucide-react";
+import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, RefreshCw, Loader2, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import dialoguesData from "@/data/avatar-dialogues.json";
-import { generateDebate } from "@/app/actions/generate-debate";
 
 export default function DebatePage() {
-  const [error, setError] = useState<string | null>(null);
+  const [dialogues, setDialogues] = useState(dialoguesData.debate);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [skipCurrent, setSkipCurrent] = useState(false);
-  
-  const [dialogues, setDialogues] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const router = useRouter();
   const addXp = useAppStore((state) => state.addXp);
@@ -27,17 +24,17 @@ export default function DebatePage() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // const dialogues = dialoguesData.debate;
   const currentLine = dialogues[currentLineIndex];
-  const isFinished = !isLoading && currentLineIndex >= dialogues.length;
+  const isFinished = currentLineIndex >= dialogues.length;
 
-  // Fetch dialogue from Gemini API
-  const fetchDebate = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  // Generate debate with AI
+  const generateWithAI = useCallback(async () => {
+    setIsGenerating(true);
     setCurrentLineIndex(0);
     setIsTypingComplete(false);
     setSkipCurrent(false);
+    window.speechSynthesis.cancel();
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     try {
       const response = await fetch("/api/generate-debate", {
@@ -49,39 +46,26 @@ export default function DebatePage() {
       if (!response.ok) throw new Error("Failed to generate debate");
 
       const data = await response.json();
-      setDialogues(data.debate);
+      if (data.debate && Array.isArray(data.debate)) {
+        setDialogues(data.debate);
+      }
     } catch (err) {
-      setError("Impossible de générer le débat. Réessayez !");
-      console.error(err);
+      console.error("Error generating debate:", err);
+      // Fallback to JSON data on error
+      setDialogues(dialoguesData.debate);
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   }, []);
 
-  // Initial load
-  useEffect(() => {
-    fetchDebate();
-  }, [fetchDebate]);
-
-  useEffect(() => {
-    const fetchDialogues = async () => {
-      setIsLoading(true);
-      try {
-        const data = await generateDebate();
-        console.log("Fetched Debate Data:", data);
-        if (data && data.debate) {
-          setDialogues(data.debate);
-        } else {
-          setDialogues(dialoguesData.debate);
-        }
-      } catch (error) {
-        console.error("Failed to fetch debate:", error);
-        setDialogues(dialoguesData.debate);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDialogues();
+  // Reset function for new debate (use JSON data)
+  const fetchDebate = useCallback(() => {
+    setDialogues(dialoguesData.debate);
+    setCurrentLineIndex(0);
+    setIsTypingComplete(false);
+    setSkipCurrent(false);
+    window.speechSynthesis.cancel();
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
   }, []);
 
   // Cleanup on unmount
@@ -106,8 +90,7 @@ export default function DebatePage() {
 
   // Handle TTS
   useEffect(() => {
-    if (isLoading || isFinished || isMuted || !currentLine) return;
-    if (isLoading || isFinished || isMuted || !currentLine) return;
+    if (isFinished || isMuted || !currentLine) return;
 
     window.speechSynthesis.cancel();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -137,7 +120,7 @@ export default function DebatePage() {
 
     const startTimeout = setTimeout(speak, 100);
     return () => clearTimeout(startTimeout);
-  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext, isLoading]);
+  }, [currentLineIndex, isMuted, isFinished, currentLine, isPlaying, goToNext]);
 
   const handleSkip = () => {
     window.speechSynthesis.cancel();
@@ -165,15 +148,6 @@ export default function DebatePage() {
     }
     setIsMuted(!isMuted);
   };
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-        <p className="text-xl text-muted-foreground">Génération du débat en cours...</p>
-      </div>
-    );
-  }
 
   if (isFinished) {
     return (
@@ -205,6 +179,15 @@ export default function DebatePage() {
   // Get all previous dialogues and current one
   const previousDialogues = dialogues.slice(0, currentLineIndex);
   
+  if (isGenerating) {
+    return (
+      <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+        <p className="text-xl text-muted-foreground">Génération du débat avec l'IA...</p>
+      </div>
+    );
+  }
+  
   if (!currentLine) return null;
 
   return (
@@ -214,11 +197,24 @@ export default function DebatePage() {
         <div>
           <h1 className="text-2xl font-bold">Le Grand Débat</h1>
           <p className="text-sm text-muted-foreground">
-            {currentLineIndex + 1} / {dialogues.length} • Généré par IA ✨
+            {currentLineIndex + 1} / {dialogues.length}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={fetchDebate} title="Nouveau débat">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={generateWithAI} 
+            title="Générer avec l'IA"
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Wand2 className="w-4 h-4" />
+            )}
+          </Button>
+          <Button variant="outline" size="icon" onClick={fetchDebate} title="Réinitialiser (JSON)">
             <RefreshCw className="w-4 h-4" />
           </Button>
           <Button variant="outline" size="icon" onClick={toggleMute} title={isMuted ? "Activer le son" : "Couper le son"}>
