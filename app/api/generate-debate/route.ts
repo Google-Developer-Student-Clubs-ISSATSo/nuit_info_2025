@@ -2,6 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
 
 const SYSTEM_PROMPT = `Tu es un générateur de dialogue pour une application éducative sur les logiciels open source.
 Génère un débat entre deux personnages:
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     const { topic } = await request.json();
     
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
       }

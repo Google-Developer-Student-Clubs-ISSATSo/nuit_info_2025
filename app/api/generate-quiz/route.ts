@@ -2,9 +2,15 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
 
-const SYSTEM_PROMPT = `Tu es un générateur de quiz éducatif sur les logiciels open source.
-Génère un quiz de 5 questions à choix multiples pour tester les connaissances sur un logiciel open source.
+
+
+export async function POST(request: Request) {
+  try {
+    const { productName, productDescription } = await request.json();
+    const SYSTEM_PROMPT = `Tu es un générateur de quiz éducatif sur les logiciels open source.
+Génère un quiz de 5 questions à choix multiples pour tester les connaissances sur un logiciel open source ${productName} qui est ${productDescription || "un logiciel open source populaire"}.
 
 Chaque question doit:
 1. Être en français
@@ -25,13 +31,8 @@ Format de sortie JSON strict:
     }
   ]
 }`;
-
-export async function POST(request: Request) {
-  try {
-    const { productName, productDescription } = await request.json();
-    
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
       }
