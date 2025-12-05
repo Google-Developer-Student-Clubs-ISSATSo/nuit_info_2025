@@ -1,0 +1,67 @@
+{
+  "debate": [
+    {
+      "speaker": "traditional",
+      "name": "Alex",
+      "emoji": "👨‍💼",
+      "text": "On dépense des milliers d'euros en licences chaque année... Et Windows 10 n'est plus supporté !"
+    },
+    {
+      "speaker": "freedom",
+      "name": "Sophie",
+      "emoji": "👩‍🏫",
+      "text": "Je comprends ! Avec NIRD, on a économisé plus de 40 000€ par an en passant à l'open-source."
+    },
+    {
+      "speaker": "traditional",
+      "name": "Alex",
+      "emoji": "👨‍💼",
+      "text": "40 000€ ?! Mais nos données sur OneDrive et Teams ?"
+    },
+    {
+      "speaker": "freedom",
+      "name": "Sophie",
+      "emoji": "👩‍🏫",
+      "text": "Nextcloud ! Données sur nos serveurs, en France, 100% RGPD."
+    },
+    {
+      "speaker": "traditional",
+      "name": "Alex",
+      "emoji": "👨‍💼",
+      "text": "Et nos vieux PC ? Microsoft dit qu'ils ne supportent plus Windows 11..."
+    },
+    {
+      "speaker": "freedom",
+      "name": "Sophie",
+      "emoji": "👩‍🏫",
+      "text": "Linux les fait revivre ! Plus rapides, plus sécurisés. +5 ans de vie facile."
+    },
+    {
+      "speaker": "traditional",
+      "name": "Alex",
+      "emoji": "👨‍💼",
+      "text": "Linux c'est compliqué non ? Et pour Office ?"
+    },
+    {
+      "speaker": "freedom",
+      "name": "Sophie",
+      "emoji": "👩‍🏫",
+      "text": "LibreOffice est gratuit et 100% compatible. Ubuntu est plus simple que Windows !"
+    },
+    {
+      "speaker": "traditional",
+      "name": "Alex",
+      "emoji": "👨‍💼",
+      "text": "OK tu m'as convaincu. Par où je commence ?"
+    },
+    {
+      "speaker": "freedom",
+      "name": "Sophie",
+      "emoji": "👩‍🏫",
+      "text": "Parfait ! Dis-moi ton rôle et je te montre les alternatives NIRD adaptées !"
+    }
+  ],
+  "freedomGuide": {
+    "intro": "Bienvenue sur la Route de la Liberté ! Découvre des outils qui respectent ta vie privée. D'abord, dis-moi qui tu es."
+  }
+}

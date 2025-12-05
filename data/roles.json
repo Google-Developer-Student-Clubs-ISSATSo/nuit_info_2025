@@ -1,0 +1,20 @@
+[
+  {
+    "id": "professor",
+    "title": "Professor",
+    "icon": "GraduationCap",
+    "description": "I want tools to teach and manage my courses effectively."
+  },
+  {
+    "id": "administration",
+    "title": "Administration",
+    "icon": "Building2",
+    "description": "I need reliable systems for managing the institution."
+  },
+  {
+    "id": "student",
+    "title": "Student",
+    "icon": "User",
+    "description": "I need free and powerful tools for my studies."
+  }
+]

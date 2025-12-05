@@ -1,0 +1,37 @@
+[
+  {
+    "id": "libreoffice",
+    "name": "LibreOffice",
+    "category": "Office Suite",
+    "description": "A powerful office suite – clean interface and feature-rich tools.",
+    "image": "/placeholder/libreoffice.png"
+  },
+  {
+    "id": "onlyoffice",
+    "name": "OnlyOffice",
+    "category": "Office Suite",
+    "description": "Secure office suite for document editing and collaboration.",
+    "image": "/placeholder/onlyoffice.png"
+  },
+  {
+    "id": "bigbluebutton",
+    "name": "BigBlueButton",
+    "category": "Video Conferencing",
+    "description": "Professional open source web conferencing system for online learning.",
+    "image": "/placeholder/bbb.png"
+  },
+  {
+    "id": "moodle",
+    "name": "Moodle",
+    "category": "LMS",
+    "description": "The world's most popular learning management system.",
+    "image": "/placeholder/moodle.png"
+  },
+  {
+    "id": "nextcloud",
+    "name": "Nextcloud",
+    "category": "Cloud Storage",
+    "description": "The self-hosted productivity platform that keeps you in control.",
+    "image": "/placeholder/nextcloud.png"
+  }
+]
