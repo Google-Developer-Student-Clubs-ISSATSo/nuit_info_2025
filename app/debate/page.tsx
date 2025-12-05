@@ -25,6 +25,7 @@ export default function DebatePage() {
   const addXp = useAppStore((state) => state.addXp);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // const dialogues = dialoguesData.debate;
   const currentLine = dialogues[currentLineIndex];
@@ -99,7 +100,7 @@ export default function DebatePage() {
       setSkipCurrent(false);
     } else {
       addXp(100);
-      router.push("/role-selection");
+      router.push("/route-selection");
     }
   }, [currentLineIndex, dialogues.length, addXp, router]);
 
@@ -184,13 +185,16 @@ export default function DebatePage() {
         >
           <h1 className="text-4xl font-bold">Débat Terminé ! 🎉</h1>
           <p className="text-xl text-muted-foreground">Alex est convaincu. Et toi ?</p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button onClick={() => router.push("/route-selection")} size="xl" variant="gradient">
+              Choisir Votre Route <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
             <Button onClick={fetchDebate} size="lg" variant="outline" className="gap-2">
               <RefreshCw className="w-4 h-4" />
               Nouveau débat
             </Button>
-            <Button onClick={() => router.push("/role-selection")} size="xl" variant="gradient">
-              Continuer <ArrowRight className="ml-2 w-5 h-5" />
+            <Button onClick={() => router.push("/freedom-guide")} size="xl" variant="outline">
+              Continuer l'Aventure <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </div>
         </motion.div>
@@ -198,6 +202,9 @@ export default function DebatePage() {
     );
   }
 
+  // Get all previous dialogues and current one
+  const previousDialogues = dialogues.slice(0, currentLineIndex);
+  
   if (!currentLine) return null;
 
   return (
@@ -224,7 +231,7 @@ export default function DebatePage() {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full h-2 bg-secondary rounded-full mb-8 overflow-hidden">
+      <div className="w-full h-2 bg-secondary rounded-full mb-6 overflow-hidden">
         <motion.div
           className="h-full bg-gradient-to-r from-emerald-500 to-teal-500"
           initial={{ width: 0 }}
@@ -233,59 +240,99 @@ export default function DebatePage() {
         />
       </div>
 
-      {/* Main Debate Area */}
-      <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12">
-        {/* Alex (Traditional) */}
-        <motion.div
-          animate={{
-            opacity: currentLine.speaker === "traditional" ? 1 : 0.4,
-            scale: currentLine.speaker === "traditional" ? 1 : 0.9,
-          }}
-          className="flex flex-col items-center gap-4"
-        >
-          <Avatar
-            type="robot"
-            name="Alex"
-            emoji={currentLine.speaker === "traditional" ? currentLine.emoji : "👨‍💼"}
-            position="left"
-            isSpeaking={currentLine.speaker === "traditional"}
-          />
-        </motion.div>
+      {/* Chat History Container */}
+      <div 
+        ref={chatContainerRef}
+        className="flex-1 flex flex-col gap-4 mb-6 overflow-y-auto max-h-[calc(100vh-20rem)] pr-2 scroll-smooth"
+      >
+        {/* Previous Messages */}
+        {previousDialogues.map((dialogue, index) => {
+          const isLeft = dialogue.speaker === "traditional";
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className={`flex gap-3 ${isLeft ? "justify-start" : "justify-end"}`}
+            >
+              {isLeft && (
+                <Avatar
+                  type="robot"
+                  name="Alex"
+                  emoji={dialogue.emoji}
+                  position="left"
+                  isSpeaking={false}
+                  className="flex-shrink-0"
+                />
+              )}
+              <div className={`max-w-[70%] ${isLeft ? "" : "flex flex-col items-end"}`}>
+                <DialogueBox
+                  text={dialogue.text}
+                  position={isLeft ? "left" : "right"}
+                  speakerType={dialogue.speaker === "freedom" ? "human" : "robot"}
+                  isComplete={true}
+                />
+              </div>
+              {!isLeft && (
+                <Avatar
+                  type="human"
+                  name="Sophie"
+                  emoji={dialogue.emoji}
+                  position="right"
+                  isSpeaking={false}
+                  className="flex-shrink-0"
+                />
+              )}
+            </motion.div>
+          );
+        })}
 
-        {/* Center Dialogue Box */}
-        <div className="flex-1 max-w-md w-full">
-          <AnimatePresence mode="wait">
-            <DialogueBox
-              key={currentLineIndex}
-              text={currentLine.text}
-              position={currentLine.speaker === "traditional" ? "left" : "right"}
-              speakerType={currentLine.speaker === "freedom" ? "human" : "robot"}
-              isComplete={skipCurrent}
-              onComplete={() => setIsTypingComplete(true)}
+        {/* Current Message (Typing) */}
+        <motion.div
+          key={currentLineIndex}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className={`flex gap-3 ${currentLine.speaker === "traditional" ? "justify-start" : "justify-end"}`}
+        >
+          {currentLine.speaker === "traditional" && (
+            <Avatar
+              type="robot"
+              name="Alex"
+              emoji={currentLine.emoji}
+              position="left"
+              isSpeaking={true}
+              className="flex-shrink-0"
             />
-          </AnimatePresence>
-        </div>
-
-        {/* Sophie (Freedom) */}
-        <motion.div
-          animate={{
-            opacity: currentLine.speaker === "freedom" ? 1 : 0.4,
-            scale: currentLine.speaker === "freedom" ? 1 : 0.9,
-          }}
-          className="flex flex-col items-center gap-4"
-        >
-          <Avatar
-            type="human"
-            name="Sophie"
-            emoji={currentLine.speaker === "freedom" ? currentLine.emoji : "👩‍🏫"}
-            position="right"
-            isSpeaking={currentLine.speaker === "freedom"}
-          />
+          )}
+          <div className={`max-w-[70%] ${currentLine.speaker === "traditional" ? "" : "flex flex-col items-end"}`}>
+            <AnimatePresence mode="wait">
+              <DialogueBox
+                key={currentLineIndex}
+                text={currentLine.text}
+                position={currentLine.speaker === "traditional" ? "left" : "right"}
+                speakerType={currentLine.speaker === "freedom" ? "human" : "robot"}
+                isComplete={skipCurrent}
+                onComplete={() => setIsTypingComplete(true)}
+              />
+            </AnimatePresence>
+          </div>
+          {currentLine.speaker === "freedom" && (
+            <Avatar
+              type="human"
+              name="Sophie"
+              emoji={currentLine.emoji}
+              position="right"
+              isSpeaking={true}
+              className="flex-shrink-0"
+            />
+          )}
         </motion.div>
       </div>
 
       {/* Controls */}
-      <div className="flex justify-center gap-4 mt-8 pt-6 border-t">
+      <div className="flex justify-center gap-4 pt-4 border-t">
         <Button
           variant="outline"
           onClick={handleSkip}
