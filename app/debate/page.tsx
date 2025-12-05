@@ -4,33 +4,32 @@ import { Avatar, DialogueBox } from "@/components/avatar/Avatar";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/useAppStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, RefreshCw, Loader2 } from "lucide-react";
+import { ArrowRight, Play, Pause, Volume2, VolumeX, SkipForward, FastForward, Loader2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
-
-interface DialogueLine {
-  speaker: "traditional" | "freedom";
-  text: string;
-  emoji: string;
-}
+import dialoguesData from "@/data/avatar-dialogues.json";
+import { generateDebate } from "@/app/actions/generate-debate";
 
 export default function DebatePage() {
-  const [dialogues, setDialogues] = useState<DialogueLine[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [skipCurrent, setSkipCurrent] = useState(false);
+  
+  const [dialogues, setDialogues] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const router = useRouter();
   const addXp = useAppStore((state) => state.addXp);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // const dialogues = dialoguesData.debate;
   const currentLine = dialogues[currentLineIndex];
-  const isFinished = dialogues.length > 0 && currentLineIndex >= dialogues.length;
+  const isFinished = !isLoading && currentLineIndex >= dialogues.length;
 
   // Fetch dialogue from Gemini API
   const fetchDebate = useCallback(async () => {
@@ -64,12 +63,26 @@ export default function DebatePage() {
     fetchDebate();
   }, [fetchDebate]);
 
-  // Auto-scroll to bottom when new message appears
   useEffect(() => {
-    if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-    }
-  }, [currentLineIndex, isTypingComplete]);
+    const fetchDialogues = async () => {
+      setIsLoading(true);
+      try {
+        const data = await generateDebate();
+        console.log("Fetched Debate Data:", data);
+        if (data && data.debate) {
+          setDialogues(data.debate);
+        } else {
+          setDialogues(dialoguesData.debate);
+        }
+      } catch (error) {
+        console.error("Failed to fetch debate:", error);
+        setDialogues(dialoguesData.debate);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDialogues();
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -93,6 +106,7 @@ export default function DebatePage() {
 
   // Handle TTS
   useEffect(() => {
+    if (isLoading || isFinished || isMuted || !currentLine) return;
     if (isLoading || isFinished || isMuted || !currentLine) return;
 
     window.speechSynthesis.cancel();
@@ -152,44 +166,11 @@ export default function DebatePage() {
     setIsMuted(!isMuted);
   };
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center space-y-6"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
-            <Loader2 className="w-12 h-12 text-primary mx-auto" />
-          </motion.div>
-          <h2 className="text-2xl font-bold">Génération du débat avec l'IA...</h2>
-          <p className="text-muted-foreground">Sophie et Alex préparent leurs arguments 🤖✨</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-12 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center space-y-6"
-        >
-          <h2 className="text-2xl font-bold text-destructive">Oups ! 😅</h2>
-          <p className="text-muted-foreground">{error}</p>
-          <Button onClick={fetchDebate} size="lg" className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Réessayer
-          </Button>
-        </motion.div>
+        <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+        <p className="text-xl text-muted-foreground">Génération du débat en cours...</p>
       </div>
     );
   }
