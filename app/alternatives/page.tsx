@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAppStore } from "@/store/useAppStore";
 import { motion } from "framer-motion";
-import { ArrowRight, Download, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import productsData from "@/data/open-source-products.json";
 
@@ -56,7 +56,7 @@ export default function AlternativesPage() {
               </CardContent>
               <CardFooter className="pt-4 border-t bg-secondary/10">
                 <Button className="w-full" asChild>
-                  <Link href={`/setup/${product.id}`}>
+                  <Link href={`/setup/${product.id}`} className="whitespace-nowrap flex gap-0">
                     Setup Instructions <ArrowRight className="ml-2 w-4 h-4" />
                   </Link>
                 </Button>
